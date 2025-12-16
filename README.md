@@ -30,18 +30,18 @@ Let $\( f(\cdot) \)$ be an activation function, usually:
 ### Update Gate
 Decides which information to keep or discard and determines how much information is retained in the processing cell:
 
-\[
+
 $$Z_t = f(W_{xz} X_t + W_{hz} h_{t-1} + b)$$
-\]
+
 
 ---
 
 ### Reset Gate
 Controls how much past information is retained and adjusts the input based on previous memories:
 
-\[
+
 $$r_t = f(W_{xr} X_t + W_{hr} h_{t-1} + b)$$
-\]
+
 
 ---
 
@@ -57,9 +57,9 @@ $$\hat{h}_t = f(W_{xh} X_t + W_{hh} (r_t \odot h_{t-1}) + b)$$
 ### Hidden State
 Helps mitigate the vanishing gradient problem present in standard RNNs:
 
-\[
+
 $$h_t = (1 - Z_t) \odot h_{t-1} + Z_t \odot \hat{h}_t$$
-\]
+
 
 ---
 
