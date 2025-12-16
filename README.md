@@ -31,7 +31,7 @@ Let \( f(\cdot) \) be an activation function, usually:
 Decides which information to keep or discard and determines how much information is retained in the processing cell:
 
 \[
-Z_t = f(W_{xz} X_t + W_{hz} h_{t-1} + b)
+$$Z_t = f(W_{xz} X_t + W_{hz} h_{t-1} + b)$$
 \]
 
 ---
