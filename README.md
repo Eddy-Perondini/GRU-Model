@@ -48,9 +48,9 @@ $$r_t = f(W_{xr} X_t + W_{hr} h_{t-1} + b)$$
 ### Candidate Hidden State
 Selects candidate memories for updating the cell state:
 
-\[
+
 $$\hat{h}_t = f(W_{xh} X_t + W_{hh} (r_t \odot h_{t-1}) + b)$$
-\]
+
 
 ---
 
