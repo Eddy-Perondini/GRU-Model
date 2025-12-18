@@ -42,6 +42,9 @@ https://www.youtube.com/watch?v=rdz0UqQz5Sw
 
 import tensorflow as tf
 
+loss_fn = tf.keras.losses.MeanSquaredError()
+optimizer = tf.keras.optimizers.Adam(learning_rate = 1e-3)
+
 class GRUScratch:
     def __init__(self, num_inputs, num_hiddens, sigma=0.01):
         self.num_inputs = num_inputs
@@ -61,7 +64,7 @@ class GRUScratch:
         # Estado Escondido Candidato
         self.W_xh, self.W_hh, self.b_h = triple()
 
-    @tf.function
+   
     def forward(self, inputs, H=None):
         """
         inputs: Tensor shape (seq_len, batch_size, num_inputs)
@@ -73,7 +76,7 @@ class GRUScratch:
 
         outputs = []
 
-        for X in inputs:  # tamanho de X: (batch_size, num_inputs)
+        for X in tf.unstack(inputs, axis=0):  # tamanho de X: (batch_size, num_inputs)
             Z = tf.sigmoid(tf.matmul(X, self.W_xz) +
                            tf.matmul(H, self.W_hz) + self.b_z)
 
@@ -85,8 +88,8 @@ class GRUScratch:
 
             H = (1 - Z) * H + Z * H_tilde
             outputs.append(H)
-
-        return outputs, H
+            
+        return tf.stack(outputs)
     
 class GRUModel(): 
     def __init__(self, num_inputs, num_hiddens, num_outputs):
@@ -95,25 +98,27 @@ class GRUModel():
         self.b_q = tf.Variable(tf.zeros(num_outputs))
 
     def __call__(self, X): 
-        Hs, _ = self.gru.forward(X)
-        Y = [tf.matmul(H, self.W_hq) + self.b_q for H in Hs]
-        return tf.stack(Y) 
+        Hs = self.gru.forward(X)
+        Y = tf.matmul(Hs, self.W_hq) + self.b_q
+        return Y
     
         
-#Função de perda + Otimizador
-
-loss_fn = tf.keras.losses.MeanSquaredError()
-optimizer = tf.keras.optimizers.Adam(1e-3)
-
-#Treinamento do modelo da GRU
+    @property
+    def trainable_variables(self):
+        return (
+            self.gru.W_xz, self.gru.W_hz, self.gru.b_z,
+            self.gru.W_xr, self.gru.W_hr, self.gru.b_r,
+            self.gru.W_xh, self.gru.W_hh, self.gru.b_h,
+            self.W_hq, self.b_q
+        )
 
 @tf.function
-def train_step(model, X, y): 
-    with tf.GradientTape() as tape: 
-        y_pred = model(X)
-        loss = loss_fn(y, y_pred)
+def train_step(model, X, Y):
 
-    vars = tape.watched_variables()
-    grads = tape.gradient(loss, vars)
-    optimizer.apply_gradients(zip(grads, vars))
-    return loss 
+    with tf.GradientTape() as tape:
+        Y_hat = model(X)
+        loss = loss_fn(Y, Y_hat)
+
+    grads = tape.gradient(loss, model.trainable_variables)
+    optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    return loss
