@@ -83,7 +83,7 @@ class GRUScratch:
             H_tilde = tf.tanh(tf.matmul(X, self.W_xh) +
                               tf.matmul(R * H, self.W_hh) + self.b_h)
 
-            H = Z * H + (1 - Z) * H_tilde
+            H = (1 - Z) * H + Z * H_tilde
             outputs.append(H)
 
         return outputs, H
@@ -95,13 +95,14 @@ class GRUModel():
         self.b_q = tf.Variable(tf.zeros(num_outputs))
 
     def __call__(self, X): 
-        outputs, H = self.gru.forward(X)
-        return tf.matmul(H, self.W_hq) + self.b_q 
+        Hs, _ = self.gru.forward(X)
+        Y = [tf.matmul(H, self.W_hq) + self.b_q for H in Hs]
+        return tf.stack(Y) 
     
         
 #Função de perda + Otimizador
 
-loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+loss_fn = tf.keras.losses.MeanSquaredError()
 optimizer = tf.keras.optimizers.Adam(1e-3)
 
 #Treinamento do modelo da GRU
