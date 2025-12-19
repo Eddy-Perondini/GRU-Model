@@ -1,4 +1,4 @@
-Modeling a GRU for sequential data prediction using Tensorflow.
+Modeling a GRU for sequential data prediction/reconstruction using Tensorflow.
 
 BRIEF EXPLANATION:
 
