@@ -9,7 +9,7 @@ import time
 
 start = time.time()    #Starting the time count
 
-#PPreparing synthetic data of geodesic curves to simulate trajectories and train GRU
+#Preparing synthetic data of geodesic curves to simulate trajectories and train GRU
 
 curves = []
 
