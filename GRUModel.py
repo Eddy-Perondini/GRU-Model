@@ -43,7 +43,7 @@ https://www.youtube.com/watch?v=rdz0UqQz5Sw
 import tensorflow as tf
 
 loss_fn = tf.keras.losses.MeanSquaredError()
-optimizer = tf.keras.optimizers.Adam(learning_rate = 1e-3)
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
 
 class GRUScratch:
     def __init__(self, num_inputs, num_hiddens, sigma=0.01):
@@ -64,11 +64,10 @@ class GRUScratch:
         # Estado Escondido Candidato
         self.W_xh, self.W_hh, self.b_h = triple()
 
-   
     def forward(self, inputs, H=None):
         """
-        inputs: Tensor shape (seq_len, batch_size, num_inputs)
-        H: estado escondido inicial (batch_size, num_hiddens)
+        inputs: (seq_len, batch_size, num_inputs)
+        H: (batch_size, num_hiddens)
         """
 
         if H is None:
@@ -76,7 +75,7 @@ class GRUScratch:
 
         outputs = []
 
-        for X in tf.unstack(inputs, axis=0):  # tamanho de X: (batch_size, num_inputs)
+        for X in tf.unstack(inputs, axis=0):
             Z = tf.sigmoid(tf.matmul(X, self.W_xz) +
                            tf.matmul(H, self.W_hz) + self.b_z)
 
@@ -88,21 +87,20 @@ class GRUScratch:
 
             H = (1 - Z) * H + Z * H_tilde
             outputs.append(H)
-            
-        return tf.stack(outputs)
-    
-class GRUModel(): 
+
+        return tf.stack(outputs), H
+
+class GRUModel:
     def __init__(self, num_inputs, num_hiddens, num_outputs):
         self.gru = GRUScratch(num_inputs, num_hiddens)
         self.W_hq = tf.Variable(tf.random.normal((num_hiddens, num_outputs)) * 0.01)
         self.b_q = tf.Variable(tf.zeros(num_outputs))
 
-    def __call__(self, X): 
-        Hs = self.gru.forward(X)
+    def __call__(self, X, H=None):
+        Hs, H = self.gru.forward(X, H)
         Y = tf.matmul(Hs, self.W_hq) + self.b_q
-        return Y
-    
-        
+        return Y, H
+
     @property
     def trainable_variables(self):
         return (
@@ -114,11 +112,27 @@ class GRUModel():
 
 @tf.function
 def train_step(model, X, Y):
-
     with tf.GradientTape() as tape:
-        Y_hat = model(X)
+        Y_hat, _ = model(X) 
         loss = loss_fn(Y, Y_hat)
 
     grads = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
     return loss
+
+def validate_step_by_step(model, X_val):
+    """
+    X_val: (T, 1, num_inputs)
+    """
+
+    H = None
+    preds = []
+
+    for t in range(X_val.shape[0]):
+        x_t = X_val[t:t+1]  # seq_len = 1
+
+        y_t, H = model(x_t, H)
+
+        preds.append(y_t.numpy().squeeze())
+
+    return tf.convert_to_tensor(preds)
